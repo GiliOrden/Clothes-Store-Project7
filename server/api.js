@@ -457,7 +457,7 @@ function updateAmount(itemId, size, operation) {
     });
   });
 }
-// // Assuming 'itemId' and 'size' are valid integers
+
 // updateAmount(itemId, size, '+')
 //   .then((message) => {
 //     console.log(message); // "Item amount updated successfully."
@@ -470,6 +470,46 @@ function updateAmount(itemId, size, operation) {
 // updateAmount(itemId, size, '-')
 //   .then((message) => {
 //     console.log(message); // "Item amount updated successfully."
+//   })
+//   .catch((error) => {
+//     console.error(error.message); // Handle any errors here
+//   });
+
+//this function gets an item id and it adds a line for each of  the sizes 34, 36, 38 , 40 , 42  with the defult amount value 5
+//when we add an item by defalt the amounts of the sizes will be added
+function addAmountLines(itemId) {
+  // Check if the 'item_id' parameter is a valid integer
+  if (isNaN(itemId) || parseInt(itemId) <= 0) {
+    return Promise.reject(
+      new Error("Invalid item_id. Please provide a valid integer.")
+    );
+  }
+
+  const sizes = [34, 36, 38, 40, 42];
+  const insertQuery =
+    "INSERT INTO amount (item_id, size, amount) VALUES (?, ?, 5)";
+
+  return new Promise((resolve, reject) => {
+    // Loop through each size and execute the insert query
+    sizes.forEach((size) => {
+      con.query(insertQuery, [itemId, size], (err, insertResult) => {
+        if (err) {
+          console.error("Error in request execution", err);
+          reject(new Error("An error occurred while adding amount lines."));
+        }
+        // The insert query was successful for the current size
+        // If you want to do something with the insertResult, you can handle it here
+      });
+    });
+
+    // All insert queries have been executed successfully
+    resolve("Amount lines added successfully.");
+  });
+}
+// // Assuming 'itemId' is a valid integer
+// addAmountLines(itemId)
+//   .then((message) => {
+//     console.log(message); // "Amount lines added successfully."
 //   })
 //   .catch((error) => {
 //     console.error(error.message); // Handle any errors here
