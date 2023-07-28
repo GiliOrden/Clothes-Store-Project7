@@ -298,6 +298,54 @@ app.put("/items/:item_id", (req, res) => {
   });
 });
 
+//adding an item , it use the function addDefaultAmountForSizes to add defualt lines to the new item.
+//*****  option for the manager ****** */
+app.post("/items", (req, res) => {
+  const newItem = req.body;
+
+  // Validate the newItem object to ensure it has the required properties
+  if (!newItem.item_description || !newItem.type) {
+    return res
+      .status(400)
+      .send({ error: "item_description and type are required fields." });
+  }
+
+  const insertQuery =
+    "INSERT INTO items (item_description, type, image) VALUES (?, ?, ?)";
+  con.query(
+    insertQuery,
+    [newItem.item_description, newItem.type, newItem.image],
+    (err, insertResult) => {
+      if (err) {
+        console.error("Error in request execution", err);
+        return res
+          .status(500)
+          .send({ error: "An error occurred while adding the item." });
+      }
+
+      // Get the item_id of the newly inserted item
+      const newItemId = insertResult.insertId;
+
+      // Call the addDefaultAmountForSizes function to add amount lines for the new item_id
+      addDefaultAmountForSizes(newItemId)
+        .then((message) => {
+          console.log(message); // Log the success message if amount lines were added successfully
+          res.status(201).send({
+            success: true,
+            message: "Item and amount lines added successfully.",
+          });
+        })
+        .catch((error) => {
+          console.error(error.message); // Handle any errors from addDefaultAmountForSizes
+          res.status(201).send({
+            success: true,
+            message: "Item added, but amount lines could not be added.",
+          });
+        });
+    }
+  );
+});
+
 //####################     amount        ##############################
 
 //http://localhost:3001/amount/1
@@ -477,7 +525,7 @@ function updateAmount(itemId, size, operation) {
 
 //this function gets an item id and it adds a line for each of  the sizes 34, 36, 38 , 40 , 42  with the defult amount value 5
 //when we add an item by defalt the amounts of the sizes will be added
-function addAmountLines(itemId) {
+function addDefaultAmountForSizes(itemId) {
   // Check if the 'item_id' parameter is a valid integer
   if (isNaN(itemId) || parseInt(itemId) <= 0) {
     return Promise.reject(
@@ -507,7 +555,7 @@ function addAmountLines(itemId) {
   });
 }
 // // Assuming 'itemId' is a valid integer
-// addAmountLines(itemId)
+// addDefaultAmountForSizes(itemId)
 //   .then((message) => {
 //     console.log(message); // "Amount lines added successfully."
 //   })
