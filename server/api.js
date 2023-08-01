@@ -194,6 +194,7 @@ app.get("/items", (req, res) => {
     res.status(200).send(results);
   });
 });
+
 //http://localhost:3001/items/type?type=Skirt
 app.get("/items/type", (req, res) => {
   const itemType = req.query.type;
@@ -344,6 +345,50 @@ app.post("/items", (req, res) => {
         });
     }
   );
+});
+
+app.delete("/items/:item_id", (req, res) => {
+  const item_id = req.params.item_id;
+
+  // Call deleteAllSizes function to delete all sizes of the item from the amount table
+  deleteAllSizes(item_id, (err, sizesDeleted) => {
+    if (err) {
+      // If there's an error in deleting sizes, respond with an error status
+      console.error("Error deleting sizes:", err);
+      return res
+        .status(500)
+        .send({ error: "An error occurred while deleting sizes." });
+    }
+
+    if (sizesDeleted) {
+      // Item sizes deleted successfully from the amount table, proceed with deleting from items table
+      const deleteItemQuery = "DELETE FROM items WHERE item_id = ?";
+      con.query(deleteItemQuery, [item_id], (err, deleteResult) => {
+        if (err) {
+          console.error("Error deleting item:", err);
+          return res
+            .status(500)
+            .send({ error: "An error occurred while deleting the item." });
+        }
+
+        // Check if any rows were affected by the delete operation
+        if (deleteResult.affectedRows > 0) {
+          // Item successfully deleted
+          res
+            .status(200)
+            .send({ success: true, message: "Item deleted successfully." });
+        } else {
+          // If no rows were affected, the item does not exist in the items table
+          res.status(404).send({ error: "The item does not exist." });
+        }
+      });
+    } else {
+      // Item sizes were not deleted, but item still exists in the items table
+      res
+        .status(500)
+        .send({ error: "Deletion process failed. Item still exists." });
+    }
+  });
 });
 
 //####################     amount        ##############################
@@ -554,6 +599,118 @@ function addDefaultAmountForSizes(itemId) {
     resolve("Amount lines added successfully.");
   });
 }
+
+function deleteAllSizes(item_id, callback) {
+  const deleteQuery = "DELETE FROM amount WHERE item_id = ?";
+  const checkItemQuery = "SELECT item_id FROM items WHERE item_id = ?";
+
+  con.query(deleteQuery, [item_id], (err, result) => {
+    if (err) {
+      console.error("Error in deleting sizes:", err);
+      return callback(err);
+    }
+
+    const affectedRows = result.affectedRows;
+    console.log(`Deleted ${affectedRows} rows for item_id ${item_id}`);
+
+    con.query(checkItemQuery, [item_id], (err, itemResult) => {
+      if (err) {
+        console.error("Error checking item existence:", err);
+        return callback(err);
+      }
+
+      if (itemResult.length === 0) {
+        console.log(
+          `Deleted rows for item_id ${item_id}. Item does not exist.`
+        );
+        return callback(null, true);
+      } else {
+        return callback(null, false);
+      }
+    });
+  });
+}
+
+//####################     liked       ##############################
+
+app.get("/loved/:username", (req, res) => {
+  // Get the username from the URL parameter
+  const username = req.params.username;
+
+  const selectItemsQuery1 = `
+      SELECT i.*
+      FROM items i
+      JOIN liked l ON i.item_id = l.item_id
+      WHERE l.username = ?;
+    `;
+
+  con.query(selectItemsQuery1, [username], (err, items) => {
+    if (err) {
+      console.error("Error fetching liked items:", err);
+      // Handle the error
+      return res
+        .status(500)
+        .json({ error: "An error occurred while fetching liked items." });
+    } else {
+      // Send the fetched items array in the response
+      res.status(200).json(items);
+    }
+  });
+});
+
+//http://localhost:3001/liked/John123/1
+//adding a liked item to the db
+app.post("/liked/:username/:item_id", (req, res) => {
+  const { username, item_id } = req.params;
+
+  // Insert a new row into the 'liked' table
+  const insertQuery = "INSERT INTO liked (item_id, username) VALUES (?, ?)";
+  con.query(insertQuery, [item_id, username], (err, result) => {
+    if (err) {
+      console.error("Error adding liked item:", err);
+      return res
+        .status(500)
+        .send({ error: "An error occurred while adding the liked item." });
+    }
+
+    // Check if any rows were affected by the insert operation
+    if (result.affectedRows === 0) {
+      return res.status(500).send({ error: "Failed to add liked item." });
+    }
+
+    // Liked item successfully added
+    res
+      .status(201)
+      .send({ success: true, message: "Liked item added successfully." });
+  });
+});
+app.delete("/liked/:username/:item_id", (req, res) => {
+  const { username, item_id } = req.params;
+
+  // Delete the row from the 'liked' table
+  const deleteQuery = "DELETE FROM liked WHERE username = ? AND item_id = ?";
+  con.query(deleteQuery, [username, item_id], (err, result) => {
+    if (err) {
+      console.error("Error deleting liked item:", err);
+      return res
+        .status(500)
+        .send({ error: "An error occurred while deleting the liked item." });
+    }
+
+    // Check if any rows were affected by the delete operation
+    if (result.affectedRows === 0) {
+      return res
+        .status(404)
+        .send({ error: "Liked item not found or invalid input provided." });
+    }
+
+    // Liked item successfully deleted
+    res
+      .status(200)
+      .send({ success: true, message: "Liked item deleted successfully." });
+  });
+});
+
 // // Assuming 'itemId' is a valid integer
 // addDefaultAmountForSizes(itemId)
 //   .then((message) => {
