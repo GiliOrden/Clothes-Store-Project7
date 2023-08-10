@@ -1,3 +1,4 @@
+//94124
 const mysql = require("mysql2");
 const http = require("http");
 const db = require("./dbconfig");
@@ -75,23 +76,6 @@ connection.connect((err) => {
         console.log("Liked table created successfully");
       });
 
-      // Create the comments table
-      const createCartsTable = `CREATE TABLE IF NOT EXISTS cart (
-        item_id INT,
-        username VARCHAR(100) ,
-        PRIMARY KEY (item_id, username),
-        FOREIGN KEY (item_id) REFERENCES items(item_id), 
-        FOREIGN KEY (username) REFERENCES users(username)
-        
-      )`;
-      connection.query(createCartsTable, (err) => {
-        if (err) {
-          console.error("Failed to create cart table:", err);
-          return;
-        }
-        console.log("Cart table created successfully");
-      });
-
       // Create the amount table
       const createAmountTable = `CREATE TABLE IF NOT EXISTS amount (
         item_id INT,
@@ -107,6 +91,24 @@ connection.connect((err) => {
           return;
         }
         console.log("Amount table created successfully");
+      });
+
+      // Create the cart table
+      const createCartsTable = `CREATE TABLE IF NOT EXISTS cart (
+        item_id INT,
+        username VARCHAR(100) ,
+        size INT ,
+        PRIMARY KEY (item_id, username, size),
+        FOREIGN KEY (item_id) REFERENCES items(item_id), 
+        FOREIGN KEY (username) REFERENCES users(username),
+        FOREIGN KEY (size) REFERENCES amount(size)
+      )`;
+      connection.query(createCartsTable, (err) => {
+        if (err) {
+          console.error("Failed to create cart table:", err);
+          return;
+        }
+        console.log("Cart table created successfully");
       });
 
       // Close the MySQL connection

@@ -684,6 +684,8 @@ app.post("/liked/:username/:item_id", (req, res) => {
       .send({ success: true, message: "Liked item added successfully." });
   });
 });
+//http://localhost:3001/liked/John123/4
+//cansle a liked item (delete from the liked table)
 app.delete("/liked/:username/:item_id", (req, res) => {
   const { username, item_id } = req.params;
 
