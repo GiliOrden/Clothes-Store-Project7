@@ -1,203 +1,119 @@
-var mysql = require("mysql2");
-var config = require("./dbconfig");
-const http = require("http");
+const mysql = require("mysql2");
+const db = require("./dbconfig");
 
-var con = mysql.createConnection(config);
+// Make a connection with the database
+const connection = mysql.createConnection(db);
 
-// execute SQL query
-function executeQuery(query) {
-  return new Promise((resolve, reject) => {
-    con.query(query, (error, results) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(results);
-      }
-    });
-  });
-}
-
-// insert user
-async function insertUsers(user) {
-  const { username, password, is_admin } = user;
-
-  const query = `INSERT INTO users (username, password, is_admin) VALUES (${username}, '${password}', '${is_admin}')`;
-  await executeQuery(query);
-}
-
-//insert post
-async function insertItems(post) {
-  const { userId, title, body } = post;
-
-  const query = `INSERT INTO posts (userId, title, body) VALUES (${userId}, '${title}', '${body}')`;
-  await executeQuery(query);
-}
-
-// insert todos
-async function insertTodo(todo) {
-  const { userId, title, completed } = todo;
-
-  const query = `INSERT INTO todos (userId, title, completed) VALUES (${userId}, '${title}', ${completed})`;
-  await executeQuery(query);
-}
-
-// insert user
-async function insertUser(user) {
-  const { name, username, email, address, phone, website } = user;
-  const { street, suite, city } = address;
-
-  const query = `INSERT INTO users (name, username, email, street, suite, city, phone, website) VALUES ('${name}', '${username}', '${email}', '${street}', '${suite}', '${city}', '${phone}', '${website}')`;
-  await executeQuery(query);
-}
-
-// generate password
-function generatePassword() {
-  const length = 8;
-  const charset =
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let password = "";
-
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * charset.length);
-    password += charset.charAt(randomIndex);
+// Connect to the MySQL server
+connection.connect(async (err) => {
+  if (err) {
+    console.error("Failed to connect to the MySQL server:", err);
+    return;
   }
+  console.log("Connected to the MySQL server");
 
-  return password;
-}
-
-// insert object to users_passwords table
-async function insertUserPassword(userId, password) {
-  const query = `INSERT INTO users_passwords (userId, password) VALUES (${userId}, '${password}')`;
-  await executeQuery(query);
-}
-
-// insert album
-async function insertAlbum(album) {
-  const { userId, id, title } = album;
-
-  const query = `INSERT INTO albums (userId, id, title) VALUES (${userId}, ${id}, '${title}')`;
-  await executeQuery(query);
-}
-
-// insert photo
-async function insertPhoto(photo) {
-  const { albumId, id, title, url, thumbnailUrl } = photo;
-
-  const query = `INSERT INTO photos (albumId, id, title, url, thumbnailUrl) VALUES (${albumId}, ${id}, '${title}', '${url}', '${thumbnailUrl}')`;
-  await executeQuery(query);
-}
-
-// get data from the URL
-function fetchData(url) {
-  return new Promise((resolve, reject) => {
-    http
-      .get(url, (res) => {
-        let data = "";
-
-        res.on("data", (chunk) => {
-          data += chunk;
-        });
-
-        res.on("end", () => {
-          resolve(JSON.parse(data));
-        });
-      })
-      .on("error", (error) => {
-        reject(error);
-      });
-  });
-}
-
-async function createTables() {
   try {
-    // Create comments table
-    await executeQuery(
-      "CREATE TABLE IF NOT EXISTS comments (id INT AUTO_INCREMENT PRIMARY KEY, postId INT, name VARCHAR(255), email VARCHAR(255), body TEXT)"
-    );
+    // Switch to the database
+    await connection.promise().query("USE fullStackProject7");
 
-    // Create posts table
-    await executeQuery(
-      "CREATE TABLE IF NOT EXISTS posts (id INT AUTO_INCREMENT PRIMARY KEY, userId INT, title VARCHAR(255), body TEXT)"
-    );
+    // Insert data into the users table
+    const usersData = [
+      { username: "user1", password: "user1pass", is_admin: false },
+      { username: "user2", password: "user2pass", is_admin: false },
+      { username: "user3", password: "user3pass", is_admin: false },
+      { username: "user4", password: "user4pass", is_admin: false },
+      { username: "user5", password: "user5pass", is_admin: false },
+      { username: "user6", password: "user6pass", is_admin: false },
+      { username: "user7", password: "user7pass", is_admin: false },
+      { username: "user8", password: "user8pass", is_admin: false },
+    ];
+    await connection
+      .promise()
+      .query("INSERT INTO users (username, password, is_admin) VALUES ?", [
+        usersData.map((user) => [user.username, user.password, user.is_admin]),
+      ]);
 
-    // Create todos tabke
-    await executeQuery(
-      "CREATE TABLE IF NOT EXISTS todos (id INT AUTO_INCREMENT PRIMARY KEY, userId INT, title VARCHAR(255), completed BOOLEAN)"
-    );
+    // Insert data into the items table
+    const itemsData = [
+      { item_description: "Cool Shirt", type: "Shirt" },
+      { item_description: "Elegant Dress", type: "Dress" },
+      { item_description: "Casual Skirt", type: "Skirt" },
+      { item_description: "Sneakers", type: "Shoes" },
+      { item_description: "Stylish Accessories", type: "accessories" },
+      { item_description: "Summer Dress", type: "Dress" },
+      { item_description: "Formal Shoes", type: "Shoes" },
+      { item_description: "Fancy Hat", type: "accessories" },
+    ];
+    await connection
+      .promise()
+      .query("INSERT INTO items (item_description, type) VALUES ?", [
+        itemsData.map((item) => [item.item_description, item.type]),
+      ]);
 
-    // Create users table
-    await executeQuery(
-      "CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), username VARCHAR(255) UNIQUE, email VARCHAR(255), street VARCHAR(255), suite VARCHAR(255), city VARCHAR(255), phone VARCHAR(255), website VARCHAR(255))"
-    );
+    // Insert data into the liked table
+    const likedData = [
+      { item_id: 1, username: "user1" },
+      { item_id: 2, username: "user2" },
+      { item_id: 3, username: "user1" },
+      { item_id: 4, username: "user3" },
+      { item_id: 5, username: "user2" },
+      { item_id: 6, username: "user4" },
+      { item_id: 7, username: "user1" },
+      { item_id: 8, username: "user5" },
+    ];
+    await connection
+      .promise()
+      .query("INSERT INTO liked (item_id, username) VALUES ?", [
+        likedData.map((liked) => [liked.item_id, liked.username]),
+      ]);
 
-    // Create users_passwords table
-    await executeQuery(
-      "CREATE TABLE IF NOT EXISTS users_passwords (userId INT PRIMARY KEY, password VARCHAR(255))"
-    );
+    // Insert data into the amount table
+    const amountData = [
+      { item_id: 1, size: "XS", amount: 10 },
+      { item_id: 2, size: "S", amount: 8 },
+      { item_id: 3, size: "M", amount: 5 },
+      { item_id: 4, size: "L", amount: 12 },
+      { item_id: 5, size: "M", amount: 3 },
+      { item_id: 6, size: "XS", amount: 6 },
+      { item_id: 7, size: "L", amount: 10 },
+      { item_id: 8, size: "S", amount: 7 },
+    ];
+    await connection
+      .promise()
+      .query("INSERT INTO amount (item_id, size, amount) VALUES ?", [
+        amountData.map((amount) => [
+          amount.item_id,
+          amount.size,
+          amount.amount,
+        ]),
+      ]);
 
-    // Create albums table
-    await executeQuery(
-      "CREATE TABLE IF NOT EXISTS albums (id INT AUTO_INCREMENT PRIMARY KEY, userId INT, title VARCHAR(255))"
-    );
+    // Insert data into the cart table
+    const cartData = [
+      { item_id: 1, username: "user1", size: "XS" },
+      { item_id: 2, username: "user1", size: "S" },
+      { item_id: 3, username: "user2", size: "M" },
+      { item_id: 4, username: "user3", size: "L" },
+      { item_id: 5, username: "user2", size: "M" },
+      { item_id: 6, username: "user4", size: "XS" },
+      { item_id: 7, username: "user1", size: "L" },
+      { item_id: 8, username: "user5", size: "S" },
+    ];
+    await connection
+      .promise()
+      .query("INSERT INTO cart (item_id, username, size) VALUES ?", [
+        cartData.map((cart) => [cart.item_id, cart.username, cart.size]),
+      ]);
 
-    // Create photos table
-    await executeQuery(
-      "CREATE TABLE IF NOT EXISTS photos (id INT AUTO_INCREMENT PRIMARY KEY, albumId INT, title VARCHAR(255), url VARCHAR(255), thumbnailUrl VARCHAR(255))"
-    );
-
-    // Récupération des données et insertion dans la table "comments"
-    const comments = await fetchData(
-      "http://jsonplaceholder.typicode.com/comments"
-    );
-    for (const comment of comments) {
-      await insertComment(comment);
-    }
-
-    // get data from the URL et put in posts table
-    const posts = await fetchData("http://jsonplaceholder.typicode.com/posts");
-    for (const post of posts) {
-      await insertPost(post);
-    }
-
-    // get data from the URL et put in todos table
-    const todos = await fetchData("http://jsonplaceholder.typicode.com/todos");
-    for (const todo of todos) {
-      await insertTodo(todo);
-    }
-
-    // get data from the URL et put in users table
-    const users = await fetchData("http://jsonplaceholder.typicode.com/users");
-    for (const user of users) {
-      await insertUser(user);
-      const password = generatePassword();
-      await insertUserPassword(user.id, password);
-    }
-
-    // get data from the URL et put in albums table
-    const albums = await fetchData(
-      "http://jsonplaceholder.typicode.com/albums"
-    );
-    for (const album of albums) {
-      await insertAlbum(album);
-    }
-
-    // get data from the URL et put in photos table
-    const photos = await fetchData(
-      "http://jsonplaceholder.typicode.com/photos"
-    );
-    for (const photo of photos) {
-      await insertPhoto(photo);
-    }
-
-    // end connection
-    con.end();
-    console.log(
-      'Tables "comments", "posts", "todos", "users", "users_passwords" , "albums", and "photos" created.'
-    );
+    console.log("Data inserted successfully.");
   } catch (error) {
     console.error("Error:", error);
+  } finally {
+    // Close the MySQL connection
+    connection.end((err) => {
+      if (err) {
+        console.error("Failed to close the connection:", err);
+      }
+    });
   }
-}
-
-// Create tables and insert data
-createTables();
+});
