@@ -8,8 +8,6 @@ router.get("/:username", async (req, res) => {
   const pool = mysql.createPool(config);
   const username = req.params.username;
   const { password } = req.body;
-  console.log(password)
-  console.log(!password)
   if (
     !username ||
     !password ||
@@ -42,8 +40,6 @@ router.post("/:username/:item_id", async (req, res) => {
   const pool = mysql.createPool(config);
   const { username, item_id } = req.params;
   const { password } = req.body;
-  console.log(password)
-  console.log(!password)
   if (
     !username ||
     !password ||
@@ -57,11 +53,10 @@ router.post("/:username/:item_id", async (req, res) => {
 
   try {
     const [results] = await pool.query(insertQuery, [item_id, username, size]);
-    console.log(results);
     if (results.affectedRows === 0) {
       return res.status(500).send({ error: "Failed to add cart item." });
     }
-
+    updateAmount(item_id, size, "-");
     res
       .status(201)
       .send({ success: true, message: "Cart item added successfully." });
@@ -78,8 +73,6 @@ router.delete("/:username/:item_id", async (req, res) => {
   const pool = mysql.createPool(config);
   const { username, item_id } = req.params;
   const { password } = req.body;
-  console.log(password)
-  console.log(!password)
   if (
     !username ||
     !password ||
@@ -87,7 +80,7 @@ router.delete("/:username/:item_id", async (req, res) => {
   ) {
     return res.status(403).json({ error: "Not valid user" });
   }
-  const size = "M"; //?
+  const size = "XS"; //?
   try {
     const deleteQuery =
       "DELETE FROM cart WHERE username = ? AND item_id = ? AND size = ?";
@@ -97,7 +90,7 @@ router.delete("/:username/:item_id", async (req, res) => {
         .status(404)
         .send({ error: "Cart item not found or invalid input provided." });
     }
-
+    updateAmount(item_id, size, "+");
     // Cart item successfully deleted
     res
       .status(200)
@@ -109,5 +102,37 @@ router.delete("/:username/:item_id", async (req, res) => {
       .send({ error: "An error occurred while deleting the cart item." });
   }
 });
+
+//function for updating the amount. when adding to the cart we will get -1 in the amount. delete in the cart we will get +1 in the amount
+async function updateAmount(itemId, size, operation) {
+  const pool = mysql.createPool(config);
+  // Check if the 'item_id' and 'size' parameters are valid integers
+  if (
+    isNaN(itemId) ||
+    parseInt(itemId) <= 0 
+  ) {
+    throw new Error("Invalid item_id or size. Please provide valid integers.");
+  }
+
+  if (operation !== "+" && operation !== "-") {
+    throw new Error(
+      "Invalid operation. Please provide '+' for increment or '-' for decrement."
+    );
+  }
+
+  const updateQuery = `UPDATE amount SET amount = amount ${
+    operation === "+" ? "+" : "-"
+  } 1 WHERE item_id = ? AND size = ?`;
+  try {
+    const [updateResult] = await pool.query(updateQuery, [itemId, size]);
+    if (updateResult.affectedRows === 0) {
+      throw new Error("Item amount not found. No update performed.");
+    }
+    return "Item amount updated successfully.";
+  } catch (error) {
+    console.error("Error in request execution", error);
+    throw new Error("An error occurred while updating the item amount.");
+  }
+}
 
 module.exports = router;
