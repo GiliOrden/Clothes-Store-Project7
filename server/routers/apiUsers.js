@@ -9,13 +9,6 @@ const apiFunctions = require("./apiFuncions");
 router.get("/", (req, res) => {
   let username = req.query.username;
   let password = req.query.password;
-  apiFunctions.checkUserAndPassword(username, password).then((isValidUser) => {
-    if (isValidUser) {
-      console.log("User exists and password is correct");
-    } else {
-      console.log("User does not exist or password is incorrect");
-    }
-  });
   getUserDetails(username, password)
     .then((results) => {
       if (results.length === 0) {
