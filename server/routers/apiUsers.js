@@ -44,37 +44,37 @@ async function getUserDetails(username, password) {
 //     "is_admin": false
 //  }
 // create user:
-router.post("/", (req, res) => {
-  let newUser = req.body;
+router.post("/", async (req, res) => {
+  try {
+    const newUser = req.body;
 
-  if (
-    !newUser.username ||
-    !newUser.password ||
-    newUser.is_admin === undefined
-  ) {
-    return res.status(400).send({ error: "Invalid user data" });
+    if (
+      !newUser.username ||
+      !newUser.password ||
+      newUser.is_admin === undefined
+    ) {
+      return res.status(400).send({ error: "Invalid user data" });
+    }
+
+    const is_admin = newUser.is_admin ? 1 : 0;
+
+    const usernameExists = await checkUsernameExists(newUser.username);
+
+    if (usernameExists) {
+      return res.status(409).send({
+        error: "The username already exists. Please choose another username.",
+      });
+    }
+
+    await createUser(newUser.username, newUser.password, is_admin);
+
+    res.status(200).send("The user added successfully!");
+  } catch (err) {
+    console.error("Error processing user data", err);
+    res
+      .status(500)
+      .send({ error: "An error occurred while processing user data." });
   }
-
-  const is_admin = newUser.is_admin ? 1 : 0;
-
-  const usernameExists = checkUsernameExists(newUser.username);
-
-  if (!usernameExists) {
-    return res.status(409).send({
-      error: "The username already exists. Please choose another username.",
-    });
-  }
-
-  createUser(newUser.username, newUser.password, is_admin)
-    .then((results) => {
-      res.status(200).send("The user added successfully!");
-    })
-    .catch((err) => {
-      console.error("Error processing user data", err);
-      res
-        .status(500)
-        .send({ error: "An error occurred while processing user data." });
-    });
 });
 
 async function checkUsernameExists(username) {
@@ -119,23 +119,27 @@ router.put("/", async (req, res) => {
       .send({ error: "Invalid request. Missing required fields." });
   }
 
-  checkOldPassword(username, oldPassword)
-    .then((results) => {
-      updateNewPassword(username, newPassword)
-        .then((resul) => {
-          res.status(200).send({ status: "Password updated successfully." });
-        })
-        .catch((err) => {
-          console.error("error with updating the user password", err);
-          res.status(500).send("error with updating the user password");
-        });
-    })
-    .catch((err) => {
-      console.error(err);
-      res
-        .status(409)
-        .send(err, "error with matching the username to the password");
-    });
+  try {
+    const isValidUser = await apiFunctions.checkUserAndPassword(
+      username,
+      oldPassword
+    );
+
+    if (!isValidUser) {
+      return res
+        .status(404)
+        .send({ error: "User not found or the password is wrong" });
+    }
+
+    const updateResult = await updateNewPassword(username, newPassword);
+    console.log(updateResult);
+    res.status(200).send({ result: "Password updated successfully." });
+  } catch (err) {
+    console.error("An error occurred:", err);
+    res
+      .status(500)
+      .send({ error: "An error occurred while processing the request." });
+  }
 });
 
 async function updateNewPassword(username, newPassword) {
@@ -150,27 +154,25 @@ async function updateNewPassword(username, newPassword) {
   }
 }
 
-async function checkOldPassword(username, oldPassword) {
-  const pool = mysql.createPool(config);
-  const selectQuery = "SELECT password FROM users WHERE username = ?";
-  let err;
-  try {
-    const [result] = await pool.query(selectQuery, [username]);
+// async function checkOldPassword(username, oldPassword) {
+//   const pool = mysql.createPool(config);
+//   const selectQuery = "SELECT password FROM users WHERE username = ?";
 
-    if (result.length === 0) {
-      err = "User not found. Incorrect username.";
-      throw new Error(err);
-    }
+//   try {
+//     const [result] = await pool.query(selectQuery, [username]);
 
-    const storedPassword = result[0].password;
+//     if (result.length === 0) {
+//       throw new Error("User not found. Incorrect username.");
+//     }
 
-    if (storedPassword !== oldPassword) {
-      err = "Incorrect old password. Password not updated.";
-      throw new Error(err);
-    }
-  } catch (error) {
-    return err;
-  }
-}
+//     const storedPassword = result[0].password;
+
+//     if (storedPassword !== oldPassword) {
+//       throw new Error("Incorrect old password. Password not updated.");
+//     }
+//   } catch (error) {
+//     throw error; // Re-throw the error object
+//   }
+// }
 
 module.exports = router;
