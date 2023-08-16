@@ -21,3 +21,8 @@ con.connect((err) => {
 app.get("/", (req, res) => {
   res.send("Connected to the data base and server");
 });
+
+app.listen(3001, () => {
+  console.log("app listening on port 3001.");
+  console.log("http://localhost:3001/");
+});

@@ -9,6 +9,9 @@ const apiFunctions = require("./apiFuncions");
 router.get("/", (req, res) => {
   let username = req.query.username;
   let password = req.query.password;
+  apiFunctions.checkUserAndPassword(username, password).then((res) => {
+    console.log("the result are: ", res);
+  });
   getUserDetails(username, password)
     .then((results) => {
       if (results.length === 0) {
