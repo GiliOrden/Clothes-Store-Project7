@@ -2,12 +2,21 @@ const express = require("express");
 const router = express.Router();
 const mysql = require("mysql2/promise");
 const config = require("../dbconfig");
-const apiFunctions = require("./apiFuncions");
-const dbconfig = require("../dbconfig");
+const checkUserAndPassword = require("./apiFuncions").checkUserAndPassword;
 
 router.get("/:username", async (req, res) => {
   const pool = mysql.createPool(config);
   const username = req.params.username;
+  const { password } = req.body;
+  console.log(password)
+  console.log(!password)
+  if (
+    !username ||
+    !password ||
+    !(await checkUserAndPassword(username, password))
+  ) {
+    return res.status(403).json({ error: "Not valid user" });
+  }
   const query = `
       SELECT i.*, size
       FROM items i
@@ -30,8 +39,18 @@ router.get("/:username", async (req, res) => {
 //http://localhost:3001/cart/John123/1
 //adding a cart item to the db
 router.post("/:username/:item_id", async (req, res) => {
-  const pool = mysql.createPool(dbconfig);
+  const pool = mysql.createPool(config);
   const { username, item_id } = req.params;
+  const { password } = req.body;
+  console.log(password)
+  console.log(!password)
+  if (
+    !username ||
+    !password ||
+    !(await checkUserAndPassword(username, password))
+  ) {
+    return res.status(403).json({ error: "Not valid user" });
+  }
   const size = "XS"; //?
   const insertQuery =
     "INSERT IGNORE INTO cart (item_id, username, size) VALUES (?, ?, ?)";
@@ -56,8 +75,18 @@ router.post("/:username/:item_id", async (req, res) => {
 //http://localhost:3001/cart/John123/4
 //cansle a cart item (delete from the cart table)
 router.delete("/:username/:item_id", async (req, res) => {
-  const pool = mysql.createPool(dbconfig);
+  const pool = mysql.createPool(config);
   const { username, item_id } = req.params;
+  const { password } = req.body;
+  console.log(password)
+  console.log(!password)
+  if (
+    !username ||
+    !password ||
+    !(await checkUserAndPassword(username, password))
+  ) {
+    return res.status(403).json({ error: "Not valid user" });
+  }
   const size = "M"; //?
   try {
     const deleteQuery =
