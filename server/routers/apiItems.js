@@ -112,7 +112,6 @@ router.put("/:username/:item_id", async (req, res) => {
 
   try {
     const isManager = await apiFunctions.isManager(username);
-    console.log(isManager);
     if (!isManager) {
       return res
         .status(200)
@@ -148,105 +147,43 @@ async function updateNewItem(itemId, newItem) {
     throw error;
   }
 }
-// POST /api/items
-router.post("/", (req, res) => {
-  const newItem = req.body;
 
-  // Validate the newItem object to ensure it has the required properties
+// POST /api/items
+//*****  option for the manager ****** */
+router.post("/:username", async (req, res) => {
+  const newItem = req.body;
+  const username = req.params.username;
   if (!newItem.item_description || !newItem.type) {
     return res
       .status(400)
       .send({ error: "item_description and type are required fields." });
   }
 
-  const insertQuery =
-    "INSERT INTO items (item_description, type, image) VALUES (?, ?, ?)";
-  con.query(
-    insertQuery,
-    [newItem.item_description, newItem.type, newItem.image],
-    (err, insertResult) => {
-      if (err) {
-        console.error("Error in request execution", err);
-        return res
-          .status(500)
-          .send({ error: "An error occurred while adding the item." });
-      }
-
-      // Get the item_id of the newly inserted item
-      const newItemId = insertResult.insertId;
-
-      // Call the addDefaultAmountForSizes function to add amount lines for the new item_id
-      addDefaultAmountForSizes(newItemId)
-        .then((message) => {
-          console.log(message); // Log the success message if amount lines were added successfully
-          res.status(201).send({
-            success: true,
-            message: "Item and amount lines added successfully.",
-          });
-        })
-        .catch((error) => {
-          console.error(error.message); // Handle any errors from addDefaultAmountForSizes
-          res.status(201).send({
-            success: true,
-            message: "Item added, but amount lines could not be added.",
-          });
-        });
-    }
-  );
-});
-
-router.post("/", async (req, res) => {
   try {
-    const newUser = req.body;
-
-    if (
-      !newUser.username ||
-      !newUser.password ||
-      newUser.is_admin === undefined
-    ) {
-      return res.status(400).send({ error: "Invalid user data" });
+    const isManager = await apiFunctions.isManager(username);
+    if (!isManager) {
+      return res
+        .status(200)
+        .send({ error: "The user is not a manager so he can't add items!" });
     }
 
-    const is_admin = newUser.is_admin ? 1 : 0;
+    await createItem(newItem);
 
-    const usernameExists = await checkUsernameExists(newUser.username);
-
-    if (usernameExists) {
-      return res.status(409).send({
-        error: "The username already exists. Please choose another username.",
-      });
-    }
-
-    await createUser(newUser.username, newUser.password, is_admin);
-
-    res.status(200).send("The user added successfully!");
+    res.status(200).send("The item added successfully!");
   } catch (err) {
-    console.error("Error processing user data", err);
+    console.error("Error processing item data", err);
     res
       .status(500)
-      .send({ error: "An error occurred while processing user data." });
+      .send({ error: "An error occurred while processing item data." });
   }
 });
 
-async function checkUsernameExists(username) {
+async function createItem(newItem) {
   const pool = mysql.createPool(config);
-  const query = `SELECT COUNT(*) AS count FROM users WHERE username = ?`;
+  const query = `INSERT INTO items (item_description, type, image) VALUES (?, ?, ?)`;
+  const values = [newItem.item_description, newItem.type, newItem.image];
   try {
-    const [result] = await pool.query(query, [username]);
-
-    return result[0].count > 0;
-  } catch (error) {
-    throw error;
-  }
-}
-
-async function createUser(username, password, is_admin) {
-  const pool = mysql.createPool(config);
-  const insertQuery =
-    "INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)";
-  const values = [username, password, is_admin];
-  try {
-    const [result] = await pool.query(insertQuery, values);
+    const [result] = await pool.query(query, values);
 
     return result;
   } catch (error) {
@@ -255,58 +192,67 @@ async function createUser(username, password, is_admin) {
 }
 
 // DELETE /api/items/:item_id
-router.delete("/:item_id", (req, res) => {
-  // Your route logic here
-});
 
 // Define other routes for items here
 
 module.exports = router;
 //####################     items        ##############################
 
-//adding an item , it use the function addDefaultAmountForSizes to add defualt lines to the new item.
-//*****  option for the manager ****** */
+router.delete("/:username/:item_id", async (req, res) => {
+  const username = req.params.username;
+  const item_id = req.params.item_id;
+  try {
+    const isManager = await apiFunctions.isManager(username);
+    if (!isManager) {
+      return res
+        .status(200)
+        .send({ error: "The user is not a manager so he can't add items!" });
+    }
+    deleteAllSizes(item_id, async (err, sizesDeleted) => {
+      if (err) {
+        console.error("Error deleting sizes:", err);
+        return res
+          .status(500)
+          .send({ error: "An error occurred while deleting sizes." });
+      }
 
-// app.delete("/items/:item_id", (req, res) => {
-//   const item_id = req.params.item_id;
+      if (sizesDeleted) {
+        await deleteItem(newItem);
+        res.status(200).send("The item deleted successfully!");
+      }
+    });
+  } catch (err) {
+    console.error("Error while deleting item data", err);
+    res.status(500).send({ error: "Error while deleting item data." });
+  }
+});
 
-//   // Call deleteAllSizes function to delete all sizes of the item from the amount table
-//   deleteAllSizes(item_id, (err, sizesDeleted) => {
-//     if (err) {
-//       // If there's an error in deleting sizes, respond with an error status
-//       console.error("Error deleting sizes:", err);
-//       return res
-//         .status(500)
-//         .send({ error: "An error occurred while deleting sizes." });
-//     }
+async function deleteAllSizes(item_id) {
+  const pool = mysql.createPool(config);
 
-//     if (sizesDeleted) {
-//       // Item sizes deleted successfully from the amount table, proceed with deleting from items table
-//       const deleteItemQuery = "DELETE FROM items WHERE item_id = ?";
-//       con.query(deleteItemQuery, [item_id], (err, deleteResult) => {
-//         if (err) {
-//           console.error("Error deleting item:", err);
-//           return res
-//             .status(500)
-//             .send({ error: "An error occurred while deleting the item." });
-//         }
+  const deleteCart = "DELETE FROM cart WHERE item_id = ?";
+  const deleteAmount = "DELETE FROM amount WHERE item_id = ?";
+  const deleteLiked = "DELETE FROM liked WHERE item_id = ?";
+  try {
+    const [result] = await pool.query(deleteCart, [item_id]);
+    if (result.affectedRows === 0) {
+      return res
+        .status(404)
+        .send({ error: "Cart item not found or invalid input provided." });
+    }
+    return result;
+  } catch (error) {
+    throw error;
+  }
+}
+async function deleteItem(item_id) {
+  const pool = mysql.createPool(config);
+  const deleteQuery = "DELETE FROM items WHERE item_id = ?";
+  try {
+    const [result] = await pool.query(deleteQuery, [item_id]);
 
-//         // Check if any rows were affected by the delete operation
-//         if (deleteResult.affectedRows > 0) {
-//           // Item successfully deleted
-//           res
-//             .status(200)
-//             .send({ success: true, message: "Item deleted successfully." });
-//         } else {
-//           // If no rows were affected, the item does not exist in the items table
-//           res.status(404).send({ error: "The item does not exist." });
-//         }
-//       });
-//     } else {
-//       // Item sizes were not deleted, but item still exists in the items table
-//       res
-//         .status(500)
-//         .send({ error: "Deletion process failed. Item still exists." });
-//     }
-//   });
-// });
+    return result;
+  } catch (error) {
+    throw error;
+  }
+}

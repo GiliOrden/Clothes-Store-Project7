@@ -54,6 +54,5 @@ async function isExistItem(item_id) {
 module.exports = {
   checkUserAndPassword: checkUserAndPassword,
   isManager: isManager,
-  isExistItem,
-  isExistItem,
+  isExistItem: isExistItem,
 };
