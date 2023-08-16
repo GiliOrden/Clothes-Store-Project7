@@ -1,7 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const mysql = require("mysql2/promise");
-var config = require("../dbconfig");
+const config = require("../dbconfig");
+const apiFunctions = require("./apiFuncions");
 // GET /api/users
 // login user:
 // example: http://localhost:3001/api/users?username=user1&password=user1pass
