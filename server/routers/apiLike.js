@@ -17,11 +17,17 @@ router.get("/:username", async (req, res) => {
     return res.status(403).json({ error: "Not valid user" });
   }
 
-  const selectItemsQuery1 = `
-      SELECT i.*
-      FROM items i
-      JOIN liked l ON i.item_id = l.item_id
-      WHERE l.username = ?;
+  const selectItemsQuery1 = `SELECT 
+  items.*,
+  (SELECT JSON_ARRAYAGG(size) 
+   FROM amount 
+   WHERE item_id = items.item_id AND amount > 0) AS availableSizes,
+  (SELECT JSON_ARRAYAGG(size) 
+   FROM amount 
+   WHERE item_id = items.item_id AND amount = 0) AS outOfStockSizes
+FROM items
+WHERE items.item_id = ?;
+
     `;
 
   try {
