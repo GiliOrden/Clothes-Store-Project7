@@ -4,11 +4,10 @@ const mysql = require("mysql2/promise");
 const config = require("../dbconfig");
 const checkUserAndPassword = require("./apiFuncions").checkUserAndPassword;
 
-router.get("/:username", async (req, res) => {
+router.get("/", async (req, res) => {
   const pool = mysql.createPool(config);
   // Get the username from the URL parameter
-  const username = req.params.username;
-  const { password } = req.body;
+  const { username, password } = req.query;
   if (
     !username ||
     !password ||
