@@ -4,10 +4,11 @@ const mysql = require("mysql2/promise");
 const config = require("../dbconfig");
 const checkUserAndPassword = require("./apiFuncions").checkUserAndPassword;
 
-router.get("/", async (req, res) => {
+router.get("/:username", async (req, res) => {
   const pool = mysql.createPool(config);
   // Get the username from the URL parameter
-  const { username, password } = req.query;
+  const username = req.params.username;
+  const { password } = req.body;
   if (
     !username ||
     !password ||
@@ -16,16 +17,24 @@ router.get("/", async (req, res) => {
     return res.status(403).json({ error: "Not valid user" });
   }
 
-  const selectItemsQuery1 = `SELECT 
-  items.*,
-  (SELECT JSON_ARRAYAGG(size) 
-   FROM amount 
-   WHERE item_id = items.item_id AND amount > 0) AS availableSizes,
-  (SELECT JSON_ARRAYAGG(size) 
-   FROM amount 
-   WHERE item_id = items.item_id AND amount = 0) AS outOfStockSizes
-FROM items
-WHERE items.item_id = ?;
+  const selectItemsQuery1 = `
+  SELECT 
+  i.*,
+  subquery.availableSizes,
+  subquery.outOfStockSizes
+FROM items i
+JOIN liked l ON i.item_id = l.item_id
+LEFT JOIN (
+  SELECT 
+    items.item_id,
+    JSON_ARRAYAGG(size) AS availableSizes,
+    JSON_ARRAYAGG(NULL) AS outOfStockSizes
+  FROM items
+  JOIN amount ON items.item_id = amount.item_id
+  WHERE amount.amount > 0
+  GROUP BY items.item_id
+) AS subquery ON i.item_id = subquery.item_id
+WHERE l.username = ?;
 
     `;
 
