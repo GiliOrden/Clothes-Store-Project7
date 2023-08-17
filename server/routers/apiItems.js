@@ -127,11 +127,12 @@ async function getItemDetailsForAdmin(itemId) {
   const pool = mysql.createPool(config);
   const query = `SELECT 
   items.*,
-  (SELECT GROUP_CONCAT(CONCAT(size, ':', amount)) 
-   FROM amount 
-   WHERE item_id = items.item_id) AS stock
+  JSON_OBJECTAGG(size, amount) AS stock
 FROM items
-WHERE items.item_id = ?;
+LEFT JOIN amount ON items.item_id = amount.item_id
+WHERE items.item_id = ?
+GROUP BY items.item_id;
+
 `;
 
   try {
