@@ -16,14 +16,14 @@ async function checkUserAndPassword(username, password) {
     throw error;
   }
 }
-async function isManager(username) {
+async function isManager(username, password) {
   const pool = mysql.createPool(config);
   const query = `SELECT username
                    FROM users
-                   WHERE username = ? AND is_admin = 1`;
+                   WHERE username = ? AND password = ? AND is_admin = 1`;
 
   try {
-    const [results] = await pool.query(query, [username]);
+    const [results] = await pool.query(query, [username, password]);
     if (results.length !== 0) {
       return true;
     }

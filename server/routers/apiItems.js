@@ -103,6 +103,7 @@ router.put("/:username/:item_id", async (req, res) => {
   const username = req.params.username;
   const itemId = req.params.item_id;
   const newItem = req.body;
+  const password = req.body.password;
 
   if (!itemId || !newItem) {
     return res
@@ -111,7 +112,7 @@ router.put("/:username/:item_id", async (req, res) => {
   }
 
   try {
-    const isManager = await apiFunctions.isManager(username);
+    const isManager = await apiFunctions.isManager(username,password);
     if (!isManager) {
       return res
         .status(200)
@@ -153,6 +154,7 @@ async function updateNewItem(itemId, newItem) {
 router.post("/:username", async (req, res) => {
   const newItem = req.body;
   const username = req.params.username;
+  const password = req.body.password;
   if (!newItem.item_description || !newItem.type) {
     return res
       .status(400)
@@ -160,7 +162,7 @@ router.post("/:username", async (req, res) => {
   }
 
   try {
-    const isManager = await apiFunctions.isManager(username);
+    const isManager = await apiFunctions.isManager(username,password);
     if (!isManager) {
       return res
         .status(200)
@@ -201,14 +203,19 @@ module.exports = router;
 router.delete("/:username/:item_id", async (req, res) => {
   const username = req.params.username;
   const item_id = req.params.item_id;
+  const password = req.body.password;
   try {
-    const isManager = await apiFunctions.isManager(username);
+    const isManager = await apiFunctions.isManager(username,password);
     if (!isManager) {
       return res
         .status(200)
         .send({ error: "The user is not a manager so he can't add items!" });
     }
-    deleteAllSizes(item_id, async (err, sizesDeleted) => {
+    await deleteAllSizes(item_id);
+    await deleteItem(item_id);
+    res.status(202).send("The item deleted successfully!");
+    /*
+     async (err, sizesDeleted) => {
       if (err) {
         console.error("Error deleting sizes:", err);
         return res
@@ -220,7 +227,7 @@ router.delete("/:username/:item_id", async (req, res) => {
         await deleteItem(newItem);
         res.status(200).send("The item deleted successfully!");
       }
-    });
+    }*/
   } catch (err) {
     console.error("Error while deleting item data", err);
     res.status(500).send({ error: "Error while deleting item data." });
@@ -235,12 +242,8 @@ async function deleteAllSizes(item_id) {
   const deleteLiked = "DELETE FROM liked WHERE item_id = ?";
   try {
     const [result] = await pool.query(deleteCart, [item_id]);
-    if (result.affectedRows === 0) {
-      return res
-        .status(404)
-        .send({ error: "Cart item not found or invalid input provided." });
-    }
-    return result;
+    const [result2] = await pool.query(deleteAmount, [item_id]);
+    const [result3] = await pool.query(deleteLiked, [item_id]);
   } catch (error) {
     throw error;
   }
@@ -249,9 +252,12 @@ async function deleteItem(item_id) {
   const pool = mysql.createPool(config);
   const deleteQuery = "DELETE FROM items WHERE item_id = ?";
   try {
+    console.log("before");
     const [result] = await pool.query(deleteQuery, [item_id]);
-
-    return result;
+    console.log("after");
+    if (result.affectedRows === 0) {
+      throw new Error("Cart item not found or invalid input provided.");
+    }
   } catch (error) {
     throw error;
   }

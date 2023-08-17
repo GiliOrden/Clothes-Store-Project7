@@ -56,7 +56,7 @@ router.post("/:username/:item_id", async (req, res) => {
     if (results.affectedRows === 0) {
       return res.status(500).send({ error: "Failed to add cart item." });
     }
-    updateAmount(item_id, size, "-");
+    await updateAmount(item_id, size, "-");
     res
       .status(201)
       .send({ success: true, message: "Cart item added successfully." });
@@ -90,7 +90,7 @@ router.delete("/:username/:item_id", async (req, res) => {
         .status(404)
         .send({ error: "Cart item not found or invalid input provided." });
     }
-    updateAmount(item_id, size, "+");
+    await updateAmount(item_id, size, "+");
     // Cart item successfully deleted
     res
       .status(200)
