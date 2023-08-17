@@ -4,10 +4,9 @@ const mysql = require("mysql2/promise");
 const config = require("../dbconfig");
 const checkUserAndPassword = require("./apiFuncions").checkUserAndPassword;
 
-router.get("/:username", async (req, res) => {
+router.get("/", async (req, res) => {
   const pool = mysql.createPool(config);
-  const username = req.params.username;
-  const { password } = req.body;
+  const { username, password } = req.query;
   if (
     !username ||
     !password ||
@@ -107,10 +106,7 @@ router.delete("/:username/:item_id", async (req, res) => {
 async function updateAmount(itemId, size, operation) {
   const pool = mysql.createPool(config);
   // Check if the 'item_id' and 'size' parameters are valid integers
-  if (
-    isNaN(itemId) ||
-    parseInt(itemId) <= 0 
-  ) {
+  if (isNaN(itemId) || parseInt(itemId) <= 0) {
     throw new Error("Invalid item_id or size. Please provide valid integers.");
   }
 
