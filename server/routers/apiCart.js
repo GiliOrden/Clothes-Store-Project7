@@ -35,10 +35,10 @@ router.get("/", async (req, res) => {
 
 //http://localhost:3001/cart/John123/1
 //adding a cart item to the db
-router.post("/:username/:item_id", async (req, res) => {
+router.post("/:item_id/:size", async (req, res) => {
   const pool = mysql.createPool(config);
-  const { username, item_id } = req.params;
-  const { password } = req.body;
+  const { size, item_id } = req.params;
+  const { password, username } = req.query;
   if (
     !username ||
     !password ||
@@ -46,7 +46,6 @@ router.post("/:username/:item_id", async (req, res) => {
   ) {
     return res.status(403).json({ error: "Not valid user" });
   }
-  const size = "XS"; //?
   const insertQuery =
     "INSERT IGNORE INTO cart (item_id, username, size) VALUES (?, ?, ?)";
 
@@ -68,10 +67,10 @@ router.post("/:username/:item_id", async (req, res) => {
 });
 //http://localhost:3001/cart/John123/4
 //cansle a cart item (delete from the cart table)
-router.delete("/:username/:item_id", async (req, res) => {
+router.delete("/:item_id/:size", async (req, res) => {
   const pool = mysql.createPool(config);
-  const { username, item_id } = req.params;
-  const { password } = req.body;
+  const { item_id, size } = req.params;
+  const { password, username } = req.query;
   if (
     !username ||
     !password ||
@@ -79,7 +78,6 @@ router.delete("/:username/:item_id", async (req, res) => {
   ) {
     return res.status(403).json({ error: "Not valid user" });
   }
-  const size = "XS"; //?
   try {
     const deleteQuery =
       "DELETE FROM cart WHERE username = ? AND item_id = ? AND size = ?";
