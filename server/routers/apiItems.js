@@ -62,27 +62,76 @@ async function getItem(itemType) {
 }
 // GET /api/items/:item_id
 //get a specific item according to the id
-//http://localhost:3001/api/items/1
-router.get("/:item_id", (req, res) => {
+//http://localhost:3001/api/items/1?username=user1&password=user1pass
+router.get("/:item_id", async (req, res) => {
   const itemId = req.params.item_id;
-  getItemDetails(itemId)
-    .then((results) => {
-      if (results.length === 0) {
-        return res.status(404).send({ error: "Item not found" });
-      }
-      res.status(200).send(results);
-    })
-    .catch((err) => {
-      console.error("Error in request execution", err);
-      res
-        .status(500)
-        .send({ error: "An error occurred while retrieving user details." });
-    });
+  let username = req.query.username;
+  let password = req.query.password;
+
+  const isManager = await apiFunctions.isManager(username, password);
+  if (isManager) {
+    getItemDetailsForAdmin(itemId)
+      .then((results) => {
+        if (results.length === 0) {
+          return res.status(404).send({ error: "Item not found" });
+        }
+        res.status(200).send(results);
+      })
+      .catch((err) => {
+        console.error("Error in request execution", err);
+        res
+          .status(500)
+          .send({ error: "An error occurred while retrieving user details." });
+      });
+  } else {
+    getItemDetailsForUser(itemId)
+      .then((results) => {
+        if (results.length === 0) {
+          return res.status(404).send({ error: "Item not found" });
+        }
+        res.status(200).send(results);
+      })
+      .catch((err) => {
+        console.error("Error in request execution", err);
+        res
+          .status(500)
+          .send({ error: "An error occurred while retrieving user details." });
+      });
+  }
 });
 
-async function getItemDetails(itemId) {
+async function getItemDetailsForUser(itemId) {
   const pool = mysql.createPool(config);
-  const query = `SELECT * FROM items WHERE item_id = ?`;
+  const query = `SELECT 
+  items.*,
+  (SELECT GROUP_CONCAT(size) 
+   FROM fullstackproject7.amount 
+   WHERE item_id = items.item_id AND amount > 0) AS availableSizes,
+  (SELECT GROUP_CONCAT(size) 
+   FROM fullstackproject7.amount 
+   WHERE item_id = items.item_id AND amount = 0) AS outOfStockSizes
+FROM items
+WHERE items.item_id = ?;
+`;
+
+  try {
+    const [results] = await pool.query(query, [itemId]);
+    return results;
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function getItemDetailsForAdmin(itemId) {
+  const pool = mysql.createPool(config);
+  const query = `SELECT 
+  items.*,
+  (SELECT GROUP_CONCAT(CONCAT(size, ':', amount)) 
+   FROM fullstackproject7.amount 
+   WHERE item_id = items.item_id) AS stock_information
+FROM items
+WHERE items.item_id = ?;
+`;
 
   try {
     const [results] = await pool.query(query, [itemId]);
@@ -112,7 +161,7 @@ router.put("/:username/:item_id", async (req, res) => {
   }
 
   try {
-    const isManager = await apiFunctions.isManager(username,password);
+    const isManager = await apiFunctions.isManager(username, password);
     if (!isManager) {
       return res
         .status(200)
@@ -162,7 +211,7 @@ router.post("/:username", async (req, res) => {
   }
 
   try {
-    const isManager = await apiFunctions.isManager(username,password);
+    const isManager = await apiFunctions.isManager(username, password);
     if (!isManager) {
       return res
         .status(200)
@@ -205,7 +254,7 @@ router.delete("/:username/:item_id", async (req, res) => {
   const item_id = req.params.item_id;
   const password = req.body.password;
   try {
-    const isManager = await apiFunctions.isManager(username,password);
+    const isManager = await apiFunctions.isManager(username, password);
     if (!isManager) {
       return res
         .status(200)
