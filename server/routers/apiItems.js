@@ -104,12 +104,12 @@ async function getItemDetailsForUser(itemId) {
   const pool = mysql.createPool(config);
   const query = `SELECT 
   items.*,
-  (SELECT JSON_ARRAYAGG(size) 
-   FROM amount 
-   WHERE item_id = items.item_id AND amount > 0) AS availableSizes,
-  (SELECT JSON_ARRAYAGG(size) 
-   FROM amount 
-   WHERE item_id = items.item_id AND amount = 0) AS outOfStockSizes
+  COALESCE((SELECT JSON_ARRAYAGG(size) 
+             FROM amount 
+             WHERE item_id = items.item_id AND amount > 0), JSON_ARRAY()) AS availableSizes,
+  COALESCE((SELECT JSON_ARRAYAGG(size) 
+             FROM amount 
+             WHERE item_id = items.item_id AND amount = 0), JSON_ARRAY()) AS outOfStockSizes
 FROM items
 WHERE items.item_id = ?;
 
