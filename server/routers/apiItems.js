@@ -233,8 +233,19 @@ router.post("/:username", async (req, res) => {
 
 async function createItem(newItem) {
   const pool = mysql.createPool(config);
-  const query = `INSERT INTO items (item_description, type, image) VALUES (?, ?, ?)`;
-  const values = [newItem.item_description, newItem.type, newItem.image];
+  const query = `INSERT INTO items (item_description, type, image, price, date_add) VALUES (?, ?, ?, ?, ?)`;
+  const currentDate = new Date();
+  const year = currentDate.getFullYear();
+  const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+  const day = String(currentDate.getDate()).padStart(2, "0");
+  const formattedDate = `${year}-${month}-${day}`;
+  const values = [
+    newItem.item_description,
+    newItem.type,
+    newItem.image,
+    item.price,
+    formattedDate,
+  ];
   try {
     const [result] = await pool.query(query, values);
 
