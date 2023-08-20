@@ -177,22 +177,30 @@ WHERE items.item_id = ?;
 
 async function getItemDetailsForAdmin(itemId, req) {
   const pool = mysql.createPool(config);
-  const query = `SELECT 
-  items.*,
-  JSON_OBJECTAGG(size, amount) AS stock
-FROM items
-LEFT JOIN amount ON items.item_id = amount.item_id
-WHERE items.item_id = ?
-GROUP BY items.item_id;
-
-`;
+  const query = `
+    SELECT 
+      items.*,
+      COALESCE(
+        JSON_OBJECTAGG(COALESCE(size, ''), COALESCE(amount, '')), 
+        JSON_OBJECT()
+      ) AS stock
+    FROM items
+    LEFT JOIN amount ON items.item_id = amount.item_id
+    WHERE items.item_id = ?
+    GROUP BY items.item_id;
+  `;
 
   try {
     const [results] = await pool.query(query, [itemId]);
-    return results.map((item) => ({
+    const modifiedResults = results.map((item) => ({
       ...item,
+      stock:
+        Object.keys(item.stock).length === 1 && item.stock[""] === ""
+          ? {}
+          : item.stock,
       image: `${req.protocol}://${req.get("host")}/${item.image}`,
     }));
+    return modifiedResults;
   } catch (error) {
     throw error;
   }
