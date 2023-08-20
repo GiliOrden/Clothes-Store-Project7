@@ -19,21 +19,22 @@ router.get("/", async (req, res) => {
   const selectItemsQuery1 = `
   SELECT 
   i.*,
-  subquery.availableSizes,
-  subquery.outOfStockSizes
+  COALESCE(subquery.availableSizes, JSON_ARRAY()) AS availableSizes,
+  COALESCE(subquery.outOfStockSizes, JSON_ARRAY()) AS outOfStockSizes
 FROM items i
 JOIN liked l ON i.item_id = l.item_id
 LEFT JOIN (
   SELECT 
     items.item_id,
     JSON_ARRAYAGG(size) AS availableSizes,
-    JSON_ARRAYAGG(NULL) AS outOfStockSizes
+    JSON_ARRAYAGG(size) AS outOfStockSizes
   FROM items
   JOIN amount ON items.item_id = amount.item_id
   WHERE amount.amount > 0
   GROUP BY items.item_id
 ) AS subquery ON i.item_id = subquery.item_id
 WHERE l.username = ?;
+
 
     `;
 
