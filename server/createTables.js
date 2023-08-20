@@ -112,6 +112,22 @@ connection.connect((err) => {
         console.log("Cart table created successfully");
       });
 
+      // Create the sales table
+      const createSalesTable = `CREATE TABLE sales (
+        sale_id INT PRIMARY KEY AUTO_INCREMENT,
+        username VARCHAR(100) NOT NULL,
+        purchased_items TEXT NOT NULL,
+        total_amount DECIMAL(10, 2) NOT NULL,
+        purchase_date DATETIME NOT NULL
+    );`;
+      connection.query(createSalesTable, (err) => {
+        if (err) {
+          console.error("Failed to create sales table:", err);
+          return;
+        }
+        console.log("Sales table created successfully");
+      });
+
       // Close the MySQL connection
       connection.end((err) => {
         if (err) {

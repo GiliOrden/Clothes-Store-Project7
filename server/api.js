@@ -29,6 +29,7 @@ const apiItemsRouter = require("./routers/apiItems");
 const apiAmountRouter = require("./routers/apiAmount");
 const apiCartRouter = require("./routers/apiCart");
 const apiLikeRouter = require("./routers/apiLike");
+const apiBuyRouter = require("./routers/apiBuy");
 const path = require("path");
 
 app.use(express.static('public'));
@@ -41,6 +42,7 @@ app.use("/api/items", apiItemsRouter);
 app.use("/api/amount", apiAmountRouter);
 app.use("/api/cart", apiCartRouter);
 app.use("/api/like", apiLikeRouter);
+app.use("/api/buy", apiBuyRouter);
 
 
 // Start the server
