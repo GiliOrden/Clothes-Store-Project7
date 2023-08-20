@@ -7,7 +7,7 @@ const checkUserAndPassword = require("./apiFuncions").checkUserAndPassword;
 router.get("/", async (req, res) => {
   const pool = mysql.createPool(config);
   // Get the username from the URL parameter
-  const {username,  password } = req.query;
+  const { username, password } = req.query;
   if (
     !username ||
     !password ||
@@ -19,21 +19,30 @@ router.get("/", async (req, res) => {
   const selectItemsQuery1 = `
   SELECT 
   i.*,
-  COALESCE(subquery.availableSizes, JSON_ARRAY()) AS availableSizes,
-  COALESCE(subquery.outOfStockSizes, JSON_ARRAY()) AS outOfStockSizes
+  COALESCE(subquery_available.availableSizes, JSON_ARRAY()) AS availableSizes,
+  COALESCE(subquery_outofstock.outOfStockSizes, JSON_ARRAY()) AS outOfStockSizes
 FROM items i
 JOIN liked l ON i.item_id = l.item_id
 LEFT JOIN (
   SELECT 
     items.item_id,
-    JSON_ARRAYAGG(size) AS availableSizes,
-    JSON_ARRAYAGG(size) AS outOfStockSizes
+    JSON_ARRAYAGG(size) AS availableSizes
   FROM items
   JOIN amount ON items.item_id = amount.item_id
   WHERE amount.amount > 0
   GROUP BY items.item_id
-) AS subquery ON i.item_id = subquery.item_id
+) AS subquery_available ON i.item_id = subquery_available.item_id
+LEFT JOIN (
+  SELECT 
+    items.item_id,
+    JSON_ARRAYAGG(size) AS outOfStockSizes
+  FROM items
+  JOIN amount ON items.item_id = amount.item_id
+  WHERE amount.amount = 0
+  GROUP BY items.item_id
+) AS subquery_outofstock ON i.item_id = subquery_outofstock.item_id
 WHERE l.username = ?;
+
 
 
     `;
