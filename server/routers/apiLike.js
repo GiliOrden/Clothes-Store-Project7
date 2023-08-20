@@ -49,9 +49,13 @@ WHERE l.username = ?;
 
   try {
     const [results] = await pool.query(selectItemsQuery1, [username]);
-    res.status(200).json(results);
+    const results2 =  results.map((item) => ({
+      ...item,
+      image: `${req.protocol}://${req.get("host")}/${item.image}`,
+    }));
+    res.status(200).json(results2);
   } catch (error) {
-    console.error("Error fetching liked items:", err);
+    console.error("Error fetching liked items:", error);
     return res
       .status(500)
       .json({ error: "An error occurred while fetching liked items." });
