@@ -29,12 +29,19 @@ const apiItemsRouter = require("./routers/apiItems");
 const apiAmountRouter = require("./routers/apiAmount");
 const apiCartRouter = require("./routers/apiCart");
 const apiLikeRouter = require("./routers/apiLike");
+const path = require("path");
+
+app.use(express.static('public'));
+app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 app.use("/api/users", apiUsersRouter);
 app.use("/api/items", apiItemsRouter);
 app.use("/api/amount", apiAmountRouter);
 app.use("/api/cart", apiCartRouter);
 app.use("/api/like", apiLikeRouter);
+
 
 // Start the server
 app.listen(3001, () => {

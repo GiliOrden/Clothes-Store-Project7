@@ -49,7 +49,9 @@ connection.connect((err) => {
         item_id INT AUTO_INCREMENT PRIMARY KEY,
         item_description VARCHAR(255) NOT NULL,
         type ENUM('Shirt', 'Skirt', 'Dress' ,'Shoes', 'accessories' ) DEFAULT 'accessories',
-        image BLOB
+        date_add DATE NOT NULL,
+        price DECIMAL(10, 2) NOT NULL,
+        image VARCHAR(255) NOT NULL
       )`;
       connection.query(createItemsTable, (err) => {
         if (err) {

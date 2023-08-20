@@ -3,13 +3,59 @@ const router = express.Router();
 const mysql = require("mysql2/promise");
 const config = require("../dbconfig");
 const apiFunctions = require("./apiFuncions");
+const multer = require("multer");
+const path = require("path");
+
+function generateUniqueName() {
+  const timestamp = new Date().getTime();
+  const randomSuffix = Math.floor(Math.random() * 10000);
+  const uniqueName = `${timestamp}_${randomSuffix}`;
+  return uniqueName;
+}
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/");
+  },
+  filename: function (req, file, cb) {
+    const originalExtension = path.extname(file.originalname);
+    const uniqueName = generateUniqueName();
+    const newFileName = `${uniqueName}${originalExtension}`;
+    cb(null, newFileName);
+  },
+});
+const upload = multer({ storage: storage });
+
+// router.post("/upload", upload.single("img"), (req, res) => {
+//   // const name = req.body.name;
+//   // const imagePath = req.file.path;
+
+//   // // You can process the received data here, like saving it to a database
+//   // console.log(imagePath)
+//   console.log("Received body:", req.body);
+//   console.log("Received file:", req.file);
+//   console.log(req.file.path);
+
+//   res.json({ message: "Image uploaded successfully." });
+// });
+
+// router.get("/upload", (req, res) => {
+//   const itemDetails = {
+//     itemName: "Item Name",
+//     // ... other item details
+//     // Construct the URL of the image
+//     imageUrl: `${req.protocol}://${req.get("host")}/uploads/MemeKing (92).png`,
+//   };
+
+//   res.json(itemDetails);
+// });
 
 // GET /api/items
 // example: http://localhost:3001/api/items
 //get all the items in the db
 
 router.get("/", (req, res) => {
-  getItems()
+  getItems(req)
     .then((results) => {
       if (results.length === 0) {
         return res.status(200).send([]);
@@ -22,7 +68,7 @@ router.get("/", (req, res) => {
     });
 });
 
-async function getItems() {
+async function getItems(req) {
   const pool = mysql.createPool(config);
   const query = `SELECT * FROM items`;
 
@@ -37,7 +83,7 @@ async function getItems() {
 //http://localhost:3001/items/api/type?type=Skirt
 router.get("/type", (req, res) => {
   const itemType = req.query.type;
-  getItem(itemType)
+  getItem(itemType, req)
     .then((results) => {
       if (results.length === 0) {
         return res.status(200).send([]);
@@ -50,12 +96,15 @@ router.get("/type", (req, res) => {
     });
 });
 
-async function getItem(itemType) {
+async function getItem(itemType, req) {
   const pool = mysql.createPool(config);
   const query = `SELECT * FROM items WHERE type = ?`;
   try {
     const [results] = await pool.query(query, [itemType]);
-    return results;
+    return results.map((item) => ({
+      ...item,
+      image: `${req.protocol}://${req.get("host")}/${item.image}`,
+    }));
   } catch (error) {
     throw error;
   }
@@ -70,7 +119,7 @@ router.get("/:item_id", async (req, res) => {
 
   const isManager = await apiFunctions.isManager(username, password);
   if (isManager) {
-    getItemDetailsForAdmin(itemId)
+    getItemDetailsForAdmin(itemId, req)
       .then((results) => {
         if (results.length === 0) {
           return res.status(404).send({ error: "Item not found" });
@@ -84,7 +133,7 @@ router.get("/:item_id", async (req, res) => {
           .send({ error: "An error occurred while retrieving user details." });
       });
   } else {
-    getItemDetailsForUser(itemId)
+    getItemDetailsForUser(itemId, req)
       .then((results) => {
         if (results.length === 0) {
           return res.status(404).send({ error: "Item not found" });
@@ -100,7 +149,7 @@ router.get("/:item_id", async (req, res) => {
   }
 });
 
-async function getItemDetailsForUser(itemId) {
+async function getItemDetailsForUser(itemId, req) {
   const pool = mysql.createPool(config);
   const query = `SELECT 
   items.*,
@@ -117,13 +166,16 @@ WHERE items.item_id = ?;
 
   try {
     const [results] = await pool.query(query, [itemId]);
-    return results;
+    return results.map((item) => ({
+      ...item,
+      image: `${req.protocol}://${req.get("host")}/${item.image}`,
+    }));
   } catch (error) {
     throw error;
   }
 }
 
-async function getItemDetailsForAdmin(itemId) {
+async function getItemDetailsForAdmin(itemId, req) {
   const pool = mysql.createPool(config);
   const query = `SELECT 
   items.*,
@@ -137,7 +189,10 @@ GROUP BY items.item_id;
 
   try {
     const [results] = await pool.query(query, [itemId]);
-    return results;
+    return results.map((item) => ({
+      ...item,
+      image: `${req.protocol}://${req.get("host")}/${item.image}`,
+    }));
   } catch (error) {
     throw error;
   }
@@ -171,13 +226,11 @@ router.put("/:username/:item_id", async (req, res) => {
     }
 
     const [isValidItem] = await getItemDetails(itemId);
-    console.log(isValidItem);
     if (!isValidItem) {
       return res.status(404).send({ error: "The item id wasn't found" });
     }
 
     const updateResult = await updateNewItem(itemId, newItem);
-    console.log(updateResult);
     res.status(200).send({ result: "Item updated successfully." });
   } catch (err) {
     console.error("An error occurred:", err);
@@ -202,7 +255,7 @@ async function updateNewItem(itemId, newItem) {
 
 // POST /api/items
 //*****  option for the manager ****** */
-router.post("/:username", async (req, res) => {
+router.post("/:username", upload.single("image"), async (req, res) => {
   const newItem = req.body;
   const username = req.params.username;
   const password = req.body.password;
@@ -220,7 +273,7 @@ router.post("/:username", async (req, res) => {
         .send({ error: "The user is not a manager so he can't add items!" });
     }
 
-    await createItem(newItem);
+    await createItem({ ...newItem, image: req.file.path });
 
     res.status(200).send("The item added successfully!");
   } catch (err) {
@@ -233,8 +286,19 @@ router.post("/:username", async (req, res) => {
 
 async function createItem(newItem) {
   const pool = mysql.createPool(config);
-  const query = `INSERT INTO items (item_description, type, image) VALUES (?, ?, ?)`;
-  const values = [newItem.item_description, newItem.type, newItem.image];
+  const query = `INSERT INTO items (item_description, type, image, price, date_add) VALUES (?, ?, ?, ?, ?)`;
+  const currentDate = new Date();
+  const year = currentDate.getFullYear();
+  const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+  const day = String(currentDate.getDate()).padStart(2, "0");
+  const formattedDate = `${year}-${month}-${day}`;
+  const values = [
+    newItem.item_description,
+    newItem.type,
+    newItem.image,
+    newItem.price,
+    formattedDate,
+  ];
   try {
     const [result] = await pool.query(query, values);
 
@@ -303,9 +367,7 @@ async function deleteItem(item_id) {
   const pool = mysql.createPool(config);
   const deleteQuery = "DELETE FROM items WHERE item_id = ?";
   try {
-    console.log("before");
     const [result] = await pool.query(deleteQuery, [item_id]);
-    console.log("after");
     if (result.affectedRows === 0) {
       throw new Error("Cart item not found or invalid input provided.");
     }

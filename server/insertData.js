@@ -35,20 +35,78 @@ connection.connect(async (err) => {
 
     // Insert data into the items table
     const itemsData = [
-      { item_description: "Cool Shirt", type: "Shirt" },
-      { item_description: "Elegant Dress", type: "Dress" },
-      { item_description: "Casual Skirt", type: "Skirt" },
-      { item_description: "Sneakers", type: "Shoes" },
-      { item_description: "Stylish Accessories", type: "accessories" },
-      { item_description: "Summer Dress", type: "Dress" },
-      { item_description: "Formal Shoes", type: "Shoes" },
-      { item_description: "Fancy Hat", type: "accessories" },
+      {
+        item_description: "Cool Shirt",
+        type: "Shirt",
+        price: 25.99,
+        date_add: "2023-08-19",
+        image: "uploads\\1692483326691_1817.png"
+      },
+      {
+        item_description: "Elegant Dress",
+        type: "Dress",
+        price: 89.99,
+        date_add: "2023-08-19",
+        image: "uploads\\1692483326691_1817.png"
+      },
+      {
+        item_description: "Casual Skirt",
+        type: "Skirt",
+        price: 34.99,
+        date_add: "2023-08-19",
+        image: "uploads\\1692483326691_1817.png"
+      },
+      {
+        item_description: "Sneakers",
+        type: "Shoes",
+        price: 59.99,
+        date_add: "2023-08-19",
+        image: "uploads\\1692483326691_1817.png"
+      },
+      {
+        item_description: "Stylish Accessories",
+        type: "Accessories",
+        price: 12.99,
+        date_add: "2023-08-19",
+        image: "uploads\\1692483326691_1817.png"
+      },
+      {
+        item_description: "Summer Dress",
+        type: "Dress",
+        price: 69.99,
+        date_add: "2023-08-19",
+        image: "uploads\\1692483326691_1817.png"
+      },
+      {
+        item_description: "Formal Shoes",
+        type: "Shoes",
+        price: 79.99,
+        date_add: "2023-08-19",
+        image: "uploads\\1692483326691_1817.png"
+      },
+      {
+        item_description: "Fancy Hat",
+        type: "Accessories",
+        price: 24.99,
+        date_add: "2023-08-19",
+        image: "uploads\\1692483326691_1817.png"
+      },
     ];
+
     await connection
       .promise()
-      .query("INSERT INTO items (item_description, type) VALUES ?", [
-        itemsData.map((item) => [item.item_description, item.type]),
-      ]);
+      .query(
+        "INSERT INTO items (item_description, type, price, date_add, image) VALUES ?",
+        [
+          itemsData.map((item) => [
+            item.item_description,
+            item.type,
+            item.price,
+            item.date_add,
+            item.image
+          ]),
+        ]
+      );
 
     // Insert data into the liked table
     const likedData = [
