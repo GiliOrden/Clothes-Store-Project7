@@ -49,7 +49,7 @@ WHERE l.username = ?;
 
   try {
     const [results] = await pool.query(selectItemsQuery1, [username]);
-    const results2 =  results.map((item) => ({
+    const results2 = results.map((item) => ({
       ...item,
       image: `${req.protocol}://${req.get("host")}/${item.image}`,
     }));
@@ -64,10 +64,10 @@ WHERE l.username = ?;
 
 //http://localhost:3001/liked/John123/1
 //adding a liked item to the db
-router.post("/:username/:item_id", async (req, res) => {
+router.post("/:item_id", async (req, res) => {
   const pool = mysql.createPool(config);
-  const { username, item_id } = req.params;
-  const { password } = req.body;
+  const { item_id } = req.params;
+  const { username, password } = req.query;
   if (
     !username ||
     !password ||
@@ -96,10 +96,10 @@ router.post("/:username/:item_id", async (req, res) => {
 });
 //http://localhost:3001/liked/John123/4
 //cansle a liked item (delete from the liked table)
-router.delete("/:username/:item_id", async (req, res) => {
+router.delete("/:item_id", async (req, res) => {
   const pool = mysql.createPool(config);
-  const { username, item_id } = req.params;
-  const { password } = req.body;
+  const { item_id } = req.params;
+  const { username, password } = req.query;
   if (
     !username ||
     !password ||

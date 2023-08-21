@@ -19,7 +19,7 @@ connection.connect(async (err) => {
     // Insert data into the users table
     const usersData = [
       { username: "user1", password: "user1pass", is_admin: false },
-      { username: "user2", password: "user2pass", is_admin: false },
+      { username: "user2", password: "user2pass", is_admin: true },
       { username: "user3", password: "user3pass", is_admin: false },
       { username: "user4", password: "user4pass", is_admin: false },
       { username: "user5", password: "user5pass", is_admin: false },
