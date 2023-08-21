@@ -323,10 +323,9 @@ async function createItem(newItem) {
 module.exports = router;
 //####################     items        ##############################
 
-router.delete("/:username/:item_id", async (req, res) => {
-  const username = req.params.username;
+router.delete("/:item_id", async (req, res) => {
+  const {username, password} = req.query;
   const item_id = req.params.item_id;
-  const password = req.body.password;
   try {
     const isManager = await apiFunctions.isManager(username, password);
     if (!isManager) {
