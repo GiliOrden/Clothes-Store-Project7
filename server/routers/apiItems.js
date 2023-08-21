@@ -213,23 +213,22 @@ async function getItemDetailsForAdmin(itemId, req) {
 //   }
 //PUT http://localhost:3001/items/1
 //update item attributes ***** option for a manager****
-router.put("/:username/:item_id", async (req, res) => {
-  const username = req.params.username;
+router.put("/:item_id", async (req, res) => {
   const itemId = req.params.item_id;
   const newItem = req.body;
-  const password = req.body.password;
+  const { username, password } = req.query;
 
-  if (!itemId || !newItem) {
+  if (!itemId || !newItem || itemId != newItem.item_id) {
     return res
       .status(400)
-      .send({ error: "Invalid request. Missing required fields." });
+      .send({ error: "Invalid request. Missing required fields or mismatched item IDs." });
   }
 
   try {
     const isManager = await apiFunctions.isManager(username, password);
     if (!isManager) {
       return res
-        .status(200)
+        .status(403)
         .send({ error: "The user is not a manager so he can't update items!" });
     }
 
@@ -324,7 +323,7 @@ module.exports = router;
 //####################     items        ##############################
 
 router.delete("/:item_id", async (req, res) => {
-  const {username, password} = req.query;
+  const { username, password } = req.query;
   const item_id = req.params.item_id;
   try {
     const isManager = await apiFunctions.isManager(username, password);
