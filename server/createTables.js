@@ -81,7 +81,7 @@ connection.connect((err) => {
       // Create the amount table
       const createAmountTable = `CREATE TABLE IF NOT EXISTS amount (
         item_id INT,
-        size ENUM('XS', 'S', 'M', 'L', 'XL'),
+        size VARCHAR(100), 
         amount INT DEFAULT 5,
         PRIMARY KEY (item_id, size),
         FOREIGN KEY (item_id) REFERENCES items(item_id)
@@ -98,7 +98,7 @@ connection.connect((err) => {
       const createCartsTable = `CREATE TABLE IF NOT EXISTS cart (
         item_id INT,
         username VARCHAR(100),
-        size ENUM('XS', 'S', 'M', 'L', 'XL'), 
+        size VARCHAR(100), 
         PRIMARY KEY (item_id, username, size),
         FOREIGN KEY (item_id) REFERENCES items(item_id),
         FOREIGN KEY (username) REFERENCES users(username),
