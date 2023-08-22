@@ -20,7 +20,7 @@ connection.connect(async (err) => {
     const usersData = [
       { username: "user1", password: "user1pass", is_admin: false },
       { username: "user2", password: "user2pass", is_admin: true },
-      { username: "user3", password: "user3pass", is_admin: false },
+      { username: "user3", password: "user3pass", is_admin: true },
       { username: "user4", password: "user4pass", is_admin: false },
       { username: "user5", password: "user5pass", is_admin: false },
       { username: "user6", password: "user6pass", is_admin: false },
@@ -40,56 +40,56 @@ connection.connect(async (err) => {
         type: "Shirt",
         price: 25.99,
         date_add: "2023-08-19",
-        image: "uploads\\1692483326691_1817.png"
+        image: "uploads\\1692483326691_1817.png",
       },
       {
         item_description: "Elegant Dress",
         type: "Dress",
         price: 89.99,
         date_add: "2023-08-19",
-        image: "uploads\\1692483326691_1817.png"
+        image: "uploads\\1692483326691_1817.png",
       },
       {
         item_description: "Casual Skirt",
         type: "Skirt",
         price: 34.99,
         date_add: "2023-08-19",
-        image: "uploads\\1692483326691_1817.png"
+        image: "uploads\\1692483326691_1817.png",
       },
       {
         item_description: "Sneakers",
         type: "Shoes",
         price: 59.99,
         date_add: "2023-08-19",
-        image: "uploads\\1692483326691_1817.png"
+        image: "uploads\\1692483326691_1817.png",
       },
       {
         item_description: "Stylish Accessories",
         type: "Accessories",
         price: 12.99,
         date_add: "2023-08-19",
-        image: "uploads\\1692483326691_1817.png"
+        image: "uploads\\1692483326691_1817.png",
       },
       {
         item_description: "Summer Dress",
         type: "Dress",
         price: 69.99,
         date_add: "2023-08-19",
-        image: "uploads\\1692483326691_1817.png"
+        image: "uploads\\1692483326691_1817.png",
       },
       {
         item_description: "Formal Shoes",
         type: "Shoes",
         price: 79.99,
         date_add: "2023-08-19",
-        image: "uploads\\1692483326691_1817.png"
+        image: "uploads\\1692483326691_1817.png",
       },
       {
         item_description: "Fancy Hat",
         type: "Accessories",
         price: 24.99,
         date_add: "2023-08-19",
-        image: "uploads\\1692483326691_1817.png"
+        image: "uploads\\1692483326691_1817.png",
       },
     ];
 
@@ -103,7 +103,7 @@ connection.connect(async (err) => {
             item.type,
             item.price,
             item.date_add,
-            item.image
+            item.image,
           ]),
         ]
       );

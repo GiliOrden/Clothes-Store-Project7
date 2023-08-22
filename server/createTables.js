@@ -51,7 +51,7 @@ connection.connect((err) => {
         type ENUM('Shirt', 'Skirt', 'Dress' ,'Shoes', 'accessories' ) DEFAULT 'accessories',
         date_add DATE NOT NULL,
         price DECIMAL(10, 2) NOT NULL,
-        image VARCHAR(255) NOT NULL
+        image VARCHAR(255)
       )`;
       connection.query(createItemsTable, (err) => {
         if (err) {

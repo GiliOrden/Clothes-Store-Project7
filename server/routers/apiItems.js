@@ -219,9 +219,9 @@ router.put("/:item_id", async (req, res) => {
   const { username, password } = req.query;
 
   if (!itemId || !newItem || itemId != newItem.item_id) {
-    return res
-      .status(400)
-      .send({ error: "Invalid request. Missing required fields or mismatched item IDs." });
+    return res.status(400).send({
+      error: "Invalid request. Missing required fields or mismatched item IDs.",
+    });
   }
 
   try {
@@ -263,7 +263,11 @@ async function updateNewItem(itemId, newItem) {
 // POST /api/items
 //*****  option for the manager ****** */
 router.post("/:username", upload.single("image"), async (req, res) => {
+  console.log("req.file:", req.file);
   const newItem = req.body;
+  const { item_description, type, date_add, price, stock } = newItem;
+
+  console.log(item_description, type, date_add, price, stock);
   const username = req.params.username;
   const password = req.body.password;
   if (!newItem.item_description || !newItem.type) {
@@ -280,8 +284,14 @@ router.post("/:username", upload.single("image"), async (req, res) => {
         .send({ error: "The user is not a manager so he can't add items!" });
     }
 
-    await createItem({ ...newItem, image: req.file.path });
-
+    const newItemId = await createItem({
+      item_description,
+      type,
+      date_add,
+      price,
+      image: req.file.path,
+    });
+    await createAmount(newItemId, stock);
     res.status(200).send("The item added successfully!");
   } catch (err) {
     console.error("Error processing item data", err);
@@ -309,7 +319,23 @@ async function createItem(newItem) {
   try {
     const [result] = await pool.query(query, values);
 
-    return result;
+    return result.insertId;
+  } catch (error) {
+    throw error;
+  }
+}
+async function createAmount(newItemId, stock) {
+  const pool = mysql.createPool(config);
+  const query = `INSERT INTO amount (item_id, size, amount) VALUES (?, ?, ?)`;
+
+  try {
+    const promises = Object.entries(stock).map(([size, amount]) => {
+      return pool.query(query, [newItemId, size, amount]);
+    });
+
+    await Promise.all(promises);
+
+    console.log("Amounts inserted successfully");
   } catch (error) {
     throw error;
   }
