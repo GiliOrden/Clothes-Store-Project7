@@ -213,12 +213,32 @@ async function getItemDetailsForAdmin(itemId, req) {
 //   }
 //PUT http://localhost:3001/items/1
 //update item attributes ***** option for a manager****
+async function deleteOldAmounts(item_id) {
+  try {
+    const pool = mysql.createPool(config);
+
+    const deleteCartQuery = "DELETE FROM cart WHERE item_id = ?";
+    await pool.query(deleteCartQuery, [item_id]);
+
+    const deleteAmountQuery = "DELETE FROM amount WHERE item_id = ?";
+    const [result] = await pool.query(deleteAmountQuery, [item_id]);
+
+    return result;
+  } catch (error) {
+    throw error;
+  }
+}
+
 router.put("/:item_id", async (req, res) => {
   const itemId = req.params.item_id;
-  const newItem = req.body;
+  const updatedAttributes = req.body;
   const { username, password } = req.query;
 
-  if (!itemId || !newItem || itemId != newItem.item_id) {
+  if (
+    !itemId ||
+    !updatedAttributes ||
+    Object.keys(updatedAttributes).length === 0
+  ) {
     return res.status(400).send({
       error: "Invalid request. Missing required fields or mismatched item IDs.",
     });
@@ -232,12 +252,20 @@ router.put("/:item_id", async (req, res) => {
         .send({ error: "The user is not a manager so he can't update items!" });
     }
 
-    const [isValidItem] = await getItemDetails(itemId);
+    const [isValidItem] = await getItemDetailsForAdmin(itemId, req);
     if (!isValidItem) {
       return res.status(404).send({ error: "The item id wasn't found" });
     }
 
-    const updateResult = await updateNewItem(itemId, newItem);
+    if (updatedAttributes.stock) {
+      // Delete old amounts and then create new amounts
+      await deleteOldAmounts(itemId);
+      await createAmount(itemId, updatedAttributes.stock);
+      delete updatedAttributes.stock;
+    } else {
+      const updateResult = await updateNewItem(itemId, updatedAttributes);
+    }
+
     res.status(200).send({ result: "Item updated successfully." });
   } catch (err) {
     console.error("An error occurred:", err);
@@ -247,11 +275,11 @@ router.put("/:item_id", async (req, res) => {
   }
 });
 
-async function updateNewItem(itemId, newItem) {
+async function updateNewItem(itemId, updatedAttributes) {
   try {
     const pool = mysql.createPool(config);
     const updateQuery = "UPDATE items SET ? WHERE item_id = ?";
-    const values = [newItem, itemId];
+    const values = [updatedAttributes, itemId];
 
     const [result] = await pool.query(updateQuery, values);
     return result;
@@ -265,9 +293,9 @@ async function updateNewItem(itemId, newItem) {
 router.post("/:username", upload.single("image"), async (req, res) => {
   console.log("req.file:", req.file);
   const newItem = req.body;
-  const { item_description, type, date_add, price, stock } = newItem;
+  const { item_description, type, price, stock } = newItem;
 
-  console.log(item_description, type, date_add, price, stock);
+  console.log(item_description, type, price, stock);
   const username = req.params.username;
   const password = req.body.password;
   if (!newItem.item_description || !newItem.type) {
@@ -287,7 +315,6 @@ router.post("/:username", upload.single("image"), async (req, res) => {
     const newItemId = await createItem({
       item_description,
       type,
-      date_add,
       price,
       image: req.file.path,
     });
