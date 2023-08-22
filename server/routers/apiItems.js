@@ -290,14 +290,11 @@ async function updateNewItem(itemId, updatedAttributes) {
 
 // POST /api/items
 //*****  option for the manager ****** */
-router.post("/:username", upload.single("image"), async (req, res) => {
+router.post("/", upload.single("image"), async (req, res) => {
   console.log("req.file:", req.file);
   const newItem = req.body;
   const { item_description, type, price, stock } = newItem;
-
-  console.log(item_description, type, price, stock);
-  const username = req.params.username;
-  const password = req.body.password;
+  const { username, password } = req.query;
   if (!newItem.item_description || !newItem.type) {
     return res
       .status(400)
@@ -316,7 +313,7 @@ router.post("/:username", upload.single("image"), async (req, res) => {
       item_description,
       type,
       price,
-      image: req.file.path,
+      //  image: req.file.path,
     });
     await createAmount(newItemId, stock);
     res.status(200).send("The item added successfully!");
