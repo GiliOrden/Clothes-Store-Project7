@@ -109,6 +109,36 @@ async function getItem(itemType, req) {
     throw error;
   }
 }
+router.get("/new", (req, res) => {
+  getNewItems(req)
+    .then((results) => {
+      if (results.length === 0) {
+        return res.status(200).send([]);
+      }
+      res.status(200).send(results);
+    })
+    .catch((err) => {
+      console.error("Error in request execution", err);
+      res.status(500).send({ error: "Error in request execution" });
+    });
+});
+
+async function getNewItems(req) {
+  const pool = mysql.createPool(config);
+  const query = `
+    SELECT * FROM items
+    ORDER BY date_add DESC
+    LIMIT 15;
+  `;
+
+  try {
+    const [results] = await pool.query(query);
+    return results;
+  } catch (error) {
+    throw error;
+  }
+}
+
 // GET /api/items/:item_id
 //get a specific item according to the id
 //http://localhost:3001/api/items/1?username=user1&password=user1pass
