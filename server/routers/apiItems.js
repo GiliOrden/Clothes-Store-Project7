@@ -343,7 +343,7 @@ router.post("/", upload.single("image"), async (req, res) => {
       item_description,
       type,
       price,
-      //  image: req.file.path,
+      image: req.file.path,
     });
     await createAmount(newItemId, stock);
     res.status(200).send("The item added successfully!");
