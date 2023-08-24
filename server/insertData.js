@@ -148,13 +148,6 @@ connection.connect(async (err) => {
         image: "uploads\\dress_8.jpg",
       },
       {
-        item_description: "  ",
-        type: "Shirt",
-        price: 50.99,
-        date_add: "2023-08-09",
-        image: "uploads\\shirt_1.jpg",
-      },
-      {
         item_description: " סריג פסים כתום ורוד לבן ",
         type: "Shirt",
         price: 50.99,
