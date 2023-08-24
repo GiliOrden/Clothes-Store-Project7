@@ -26,34 +26,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// router.post("/upload", upload.single("img"), (req, res) => {
-//   // const name = req.body.name;
-//   // const imagePath = req.file.path;
-
-//   // // You can process the received data here, like saving it to a database
-//   // console.log(imagePath)
-//   console.log("Received body:", req.body);
-//   console.log("Received file:", req.file);
-//   console.log(req.file.path);
-
-//   res.json({ message: "Image uploaded successfully." });
-// });
-
-// router.get("/upload", (req, res) => {
-//   const itemDetails = {
-//     itemName: "Item Name",
-//     // ... other item details
-//     // Construct the URL of the image
-//     imageUrl: `${req.protocol}://${req.get("host")}/uploads/MemeKing (92).png`,
-//   };
-
-//   res.json(itemDetails);
-// });
-
-// GET /api/items
-// example: http://localhost:3001/api/items
-//get all the items in the db
-
 router.get("/", (req, res) => {
   getItems(req)
     .then((results) => {
