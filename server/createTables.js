@@ -48,7 +48,7 @@ connection.connect((err) => {
       const createItemsTable = `CREATE TABLE IF NOT EXISTS items (
         item_id INT AUTO_INCREMENT PRIMARY KEY,
         item_description VARCHAR(255) NOT NULL,
-        type ENUM('Shirt', 'Skirt', 'Dress' ,'Shoes', 'accessories' ) DEFAULT 'accessories',
+        type ENUM('Shirt', 'Skirt', 'Dress' ,'Shoes', 'Accessories' ) DEFAULT 'accessories',
         date_add DATE NOT NULL,
         price DECIMAL(10, 2) NOT NULL,
         image VARCHAR(255)
