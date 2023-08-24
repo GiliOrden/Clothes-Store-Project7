@@ -87,7 +87,11 @@ router.get("/new", (req, res) => {
       if (results.length === 0) {
         return res.status(200).send([]);
       }
-      res.status(200).send(results);
+      const result2 = results.map((item) => ({
+        ...item,
+        image: `${req.protocol}://${req.get("host")}/${item.image}`,
+      }));
+      res.status(200).send(result2);
     })
     .catch((err) => {
       console.error("Error in request execution", err);

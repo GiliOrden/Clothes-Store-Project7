@@ -56,7 +56,9 @@ router.post("/:item_id/:size", async (req, res) => {
   try {
     const [results] = await pool.query(insertQuery, [item_id, username, size]);
     if (results.affectedRows === 0) {
-      return res.status(500).send({ error: "Failed to add cart item." });
+      return res
+      .status(201)
+      .send({ success: true, message: "Cart item added successfully." });
     }
     await updateAmount(item_id, size, "-");
     res

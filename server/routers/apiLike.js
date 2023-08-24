@@ -77,12 +77,13 @@ router.post("/:item_id", async (req, res) => {
   }
 
   // Insert a new row into the 'liked' table
-  ///////////////////////אם קיים?
   const insertQuery = "INSERT INTO liked (item_id, username) VALUES (?, ?)";
   try {
     const [result] = await pool.query(insertQuery, [item_id, username]);
     if (result.affectedRows === 0) {
-      return res.status(500).send({ error: "Failed to add liked item." });
+      return res
+        .status(201)
+        .send({ success: true, message: "Liked item added successfully." });
     }
     res
       .status(201)
