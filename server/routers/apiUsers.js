@@ -48,15 +48,9 @@ router.post("/", async (req, res) => {
   try {
     const newUser = req.body;
 
-    if (
-      !newUser.username ||
-      !newUser.password ||
-      newUser.is_admin === undefined
-    ) {
+    if (!newUser.username || !newUser.password) {
       return res.status(400).send({ error: "Invalid user data" });
     }
-
-    const is_admin = newUser.is_admin ? 1 : 0;
 
     const usernameExists = await checkUsernameExists(newUser.username);
 
@@ -66,7 +60,7 @@ router.post("/", async (req, res) => {
       });
     }
 
-    await createUser(newUser.username, newUser.password, is_admin);
+    await createUser(newUser.username, newUser.password, 0);
 
     res.status(200).send("The user added successfully!");
   } catch (err) {
